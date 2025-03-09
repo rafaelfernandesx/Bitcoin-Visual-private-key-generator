@@ -53,7 +53,7 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
   String address = '';
   String addressc = '';
 
-  void binaryToHex() {
+  void binaryToHex([bool addHystory = true]) {
     // Converte a string binária em um número inteiro
     BigInt decimalValue = BigInt.parse(hashBin, radix: 2);
 
@@ -66,7 +66,9 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
       address = btc.getAddress();
       addressc = btc.getAddress(true);
     });
-    hashHistory.add(hashHex);
+    if (addHystory) {
+      hashHistory.add(hashHex);
+    }
   }
 
   Future<String> getBalance(String addr) async {
@@ -90,7 +92,7 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
       }
     });
     genBin();
-    binaryToHex();
+    binaryToHex(false);
   }
 
   Set<String> hashHistory = {};
@@ -150,8 +152,7 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
                     },
                   ),
                 ),
-                // Exibe o hash gerado com base nos bits selecionados
-                // Text('Hash BIN: $hashBin', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -187,7 +188,7 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
           children: [
             FloatingActionButton(
               onPressed: () {
-                if (hashHistory.isNotEmpty) {
+                if (hashHistory.length > 1) {
                   hashHistory.remove(hashHistory.last);
                   loadVisualization(hashHistory.last);
                 }
