@@ -15,7 +15,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Private Key Visualizer', theme: ThemeData(primarySwatch: Colors.blue), home: PrivateKeyVisualizer());
+    return MaterialApp(
+      title: 'Private Key Visualizer',
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      home: PrivateKeyVisualizer(),
+    );
   }
 }
 

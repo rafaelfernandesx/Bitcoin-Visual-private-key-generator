@@ -227,20 +227,25 @@ class _Puzzle68PageState extends State<Puzzle68Page> {
             GestureDetector(
               onLongPressStart: (_) => _startRepeatingAction(),
               onLongPressEnd: (_) => _stopRepeatingAction(),
-              child: FloatingActionButton(
-                heroTag: null,
-                onPressed: () {
-                  setState(() {
-                    selectedBitIndices.clear(); // Limpa os bits selecionados
-                    List.generate(68, (index) {
-                      selectedBitIndices.add((188 + Random().nextInt(256 - 188 + 1)));
-                    });
+              onTap: () {
+                setState(() {
+                  selectedBitIndices.clear(); // Limpa os bits selecionados
+                  List.generate(68, (index) {
+                    selectedBitIndices.add((188 + Random().nextInt(256 - 188 + 1)));
                   });
-                  genBin();
-                  binaryToHex();
-                  hashHexController.text = hashHex;
-                },
-                tooltip: 'Gerar nova chave',
+                });
+                genBin();
+                binaryToHex();
+                hashHexController.text = hashHex;
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  boxShadow: [BoxShadow(color: const Color.fromARGB(62, 0, 0, 0), blurRadius: 4, offset: Offset(0, 4))],
+                ),
+
+                padding: EdgeInsets.all(16),
                 child: Icon(Icons.refresh),
               ),
             ),
