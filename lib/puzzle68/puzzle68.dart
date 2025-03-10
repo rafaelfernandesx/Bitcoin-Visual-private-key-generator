@@ -78,7 +78,7 @@ class _Puzzle68PageState extends State<Puzzle68Page> {
     final listBin = BigInt.parse(hex, radix: 16).toRadixString(2).split('');
     listBin.asMap().forEach((index, bin) {
       if (bin == '1') {
-        selectedBitIndices.add(index);
+        selectedBitIndices.add(index + 188);
       }
     });
     genBin();
