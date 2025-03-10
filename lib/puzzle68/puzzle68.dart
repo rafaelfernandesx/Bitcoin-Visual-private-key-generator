@@ -1,51 +1,21 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:math';
 
 import 'package:btcview/btctool.dart';
-import 'package:btcview/puzzle68/puzzle68.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData, rootBundle;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class Puzzle68Page extends StatefulWidget {
+  const Puzzle68Page({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(title: 'Private Key Visualizer', theme: ThemeData(primarySwatch: Colors.blue), home: PrivateKeyVisualizer());
-  }
+  State<Puzzle68Page> createState() => _Puzzle68PageState();
 }
 
-class PrivateKeyVisualizer extends StatefulWidget {
-  const PrivateKeyVisualizer({super.key});
-
-  @override
-  _PrivateKeyVisualizerState createState() => _PrivateKeyVisualizerState();
-}
-
-class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
+class _Puzzle68PageState extends State<Puzzle68Page> {
   // Gera uma lista de 256 bits (0 ou 1) para simular uma chave privada
   List<int> privateKeyBits = List.generate(256, (index) => index);
   final hashHexController = TextEditingController();
-  bool autoCheckBalance = false;
-  Set<String> btcAddressList = {};
-
-  Future<void> loadJson() async {
-    try {
-      // Carregar o JSON como String
-      String jsonString = await rootBundle.loadString('assets/address.json');
-
-      // Decodificar para um Map (caso o JSON seja um objeto) ou List (caso seja um array)
-      final btcList = jsonDecode(jsonString);
-
-      btcAddressList = btcList.map<String>((e) => e.toString()).toSet();
-    } catch (e) {
-      print('Erro ao carregar JSON: $e');
-    }
-  }
 
   // Armazena os índices dos bits selecionados
   Set<int> selectedBitIndices = {};
@@ -83,29 +53,24 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
       btc.setPrivateKeyHex(hashHex);
       address = btc.getAddress();
       addressc = btc.getAddress(true);
-      if (autoCheckBalance) {
-        address = '$address - ${getBalance(address)}';
-        addressc = '$addressc - ${getBalance(addressc)}';
-      }
+      address = '$address - ${getBalance(address)}';
+      addressc = '$addressc - ${getBalance(addressc)}';
     });
     if (addHystory) {
       hashHistory.add(hashHex);
     }
+    if (hashHistory.length > 300) {
+      hashHistory.clear();
+    }
   }
 
   String getBalance(String addr) {
-    if (btcAddressList.isEmpty) {
-      loadJson();
+    if (addr == '1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ') {
+      showAdaptiveAboutDialog(context: context, children: [Text('1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ')], barrierDismissible: false);
+      return 'Found';
     }
-    final result = btcAddressList.firstWhere((address) {
-      return address.split(',')[0] == addr;
-    }, orElse: () => '0,0');
-    final balance = result.split(',')[1];
-    if (balance != '0') {
-      showAdaptiveAboutDialog(context: context, children: [Text('Balance: $balance')], barrierDismissible: false);
-      return balance;
-    }
-    return balance;
+
+    return '0';
   }
 
   void loadVisualization(String hex) {
@@ -122,6 +87,26 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
 
   Set<String> hashHistory = {};
 
+  Timer? _timer;
+
+  void _startRepeatingAction() {
+    _timer = Timer.periodic(Duration(milliseconds: 10), (timer) {
+      setState(() {
+        selectedBitIndices.clear(); // Limpa os bits selecionados
+        List.generate(68, (index) {
+          selectedBitIndices.add((188 + Random().nextInt(256 - 188 + 1)));
+        });
+      });
+      genBin();
+      binaryToHex();
+      hashHexController.text = hashHex;
+    });
+  }
+
+  void _stopRepeatingAction() {
+    _timer?.cancel();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -129,47 +114,31 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text('Private Key (256-bit Visualization)', style: TextStyle(fontSize: 16)), centerTitle: true),
+        appBar: AppBar(title: Text('Puzzle 68 finder', style: TextStyle(fontSize: 16)), centerTitle: true),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Check balance automatically', style: TextStyle(fontSize: 16)),
-                Checkbox(
-                  value: autoCheckBalance,
-                  onChanged: (check) {
-                    setState(() {
-                      autoCheckBalance = check!;
-                    });
-                  },
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => Puzzle68Page()));
-                  },
-                  child: Text('Puzzle 68'),
-                ),
-
                 SizedBox(
-                  height: MediaQuery.of(context).size.width - 32,
+                  height: MediaQuery.of(context).size.width / 2,
                   child: GridView.builder(
                     physics: NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 16, // 16 colunas
+                      crossAxisCount: 12, // 16 colunas
                       childAspectRatio: 1.0, // Quadrados perfeitos
                     ),
-                    itemCount: 256, // 16x16 = 256 bits
+                    itemCount: 68, // 16x16 = 256 bits
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () {
                           setState(() {
                             // Adiciona ou remove o índice do bit selecionado
-                            if (selectedBitIndices.contains(index)) {
-                              selectedBitIndices.remove(index);
+                            if (selectedBitIndices.contains(index + 188)) {
+                              selectedBitIndices.remove(index + 188);
                             } else {
-                              selectedBitIndices.add(index);
+                              selectedBitIndices.add(index + 188);
                             }
                           });
                           genBin();
@@ -177,15 +146,17 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
                           hashHexController.text = hashHex;
                         },
                         child: Container(
+                          width: 35,
+                          height: 35,
                           decoration: BoxDecoration(
-                            color: selectedBitIndices.contains(index) ? Colors.blue : Colors.white,
+                            color: selectedBitIndices.contains(index + 188) ? Colors.blue : Colors.white,
                             border: Border.all(color: Colors.black),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Center(
                             child: Text(
-                              privateKeyBits[index].toString(),
-                              style: TextStyle(fontSize: 8, color: selectedBitIndices.contains(index) ? Colors.white : Colors.black),
+                              privateKeyBits[index + 188].toString(),
+                              style: TextStyle(fontSize: 8, color: selectedBitIndices.contains(index + 188) ? Colors.white : Colors.black),
                             ),
                           ),
                         ),
@@ -193,10 +164,21 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
                     },
                   ),
                 ),
+
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(controller: hashHexController, minLines: 2, maxLines: 6, onChanged: loadVisualization),
+                    Row(
+                      children: [
+                        Expanded(child: TextField(controller: hashHexController, minLines: 2, maxLines: 6, onChanged: loadVisualization)),
+                        IconButton(
+                          icon: Icon(Icons.copy),
+                          onPressed: () async {
+                            await Clipboard.setData(ClipboardData(text: hashHex));
+                          },
+                        ),
+                      ],
+                    ),
                     TextButton(
                       onLongPress: () async {
                         await Clipboard.setData(ClipboardData(text: address));
@@ -243,13 +225,15 @@ class _PrivateKeyVisualizerState extends State<PrivateKeyVisualizer> {
             ),
             SizedBox(width: 10),
             GestureDetector(
+              onLongPressStart: (_) => _startRepeatingAction(),
+              onLongPressEnd: (_) => _stopRepeatingAction(),
               child: FloatingActionButton(
                 heroTag: null,
                 onPressed: () {
                   setState(() {
                     selectedBitIndices.clear(); // Limpa os bits selecionados
-                    List.generate(256, (index) {
-                      selectedBitIndices.add(Random().nextInt(256));
+                    List.generate(68, (index) {
+                      selectedBitIndices.add((188 + Random().nextInt(256 - 188 + 1)));
                     });
                   });
                   genBin();
